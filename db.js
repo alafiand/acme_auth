@@ -21,6 +21,13 @@ const User = conn.define("user", {
   password: STRING,
 });
 
+const Note = conn.define("note", {
+  text: STRING,
+});
+
+Note.belongsTo(User);
+User.hasMany(Note);
+
 User.byToken = async (token) => {
   try {
     console.log("token", token);
@@ -40,7 +47,6 @@ User.byToken = async (token) => {
 };
 
 User.authenticate = async ({ username, password }) => {
-
   const user = await User.findOne({
     where: {
       username,
@@ -66,12 +72,27 @@ const syncAndSeed = async () => {
     { username: "larry", password: "larry_pw" },
   ];
 
+  const notes = [
+    { text: "Note 1", userId: 1 },
+    { text: "Note 2", userId: 1 },
+    { text: "Note 3", userId: 2 },
+    { text: "Note 4", userId: 2 },
+    { text: "Note 5", userId: 3 },
+    { text: "Note 6", userId: 3 },
+    { text: "Note 7", userId: 3 },
+  ];
+
   const [lucy, moe, larry] = await Promise.all(
     credentials.map(async (credential) => {
       const hashedPW = await bcrypt.hash(credential.password, 5);
-      User.create({ username: credential.username, password: hashedPW });
+      User.create({
+        username: credential.username,
+        password: hashedPW,
+      });
     })
   );
+
+  await Promise.all(notes.map((note) => Note.create(note)));
 
   return {
     users: {
@@ -86,5 +107,6 @@ module.exports = {
   syncAndSeed,
   models: {
     User,
+    Note,
   },
 };
